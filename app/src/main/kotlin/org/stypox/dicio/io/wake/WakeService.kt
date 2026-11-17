@@ -30,6 +30,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import org.stypox.dicio.MainActivity
+import org.stypox.dicio.util.BackgroundLaunch
 import org.stypox.dicio.MainActivity.Companion.ACTION_WAKE_WORD
 import org.stypox.dicio.R
 import org.stypox.dicio.di.SttInputDeviceWrapper
@@ -236,9 +237,12 @@ class WakeService : Service() {
         handler.removeCallbacks(releaseSttResourcesRunnable)
         handler.postDelayed(releaseSttResourcesRunnable, RELEASE_STT_RESOURCES_MILLIS)
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || MainActivity.isInForeground > 0) {
-            // start the activity directly on versions prior to Android 10,
-            // or if the MainActivity is already running in the foreground
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+            MainActivity.isInForeground > 0 ||
+            BackgroundLaunch.isAllowed(this)
+        ) {
+            // start the activity directly on versions prior to Android 10, if the MainActivity
+            // is already running in the foreground, or if "Appear on top" was granted
             startActivity(intent)
 
         } else {

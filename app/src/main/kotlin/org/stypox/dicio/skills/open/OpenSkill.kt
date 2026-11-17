@@ -11,6 +11,8 @@ import org.dicio.skill.skill.SkillOutput
 import org.dicio.skill.standard.StandardRecognizerData
 import org.dicio.skill.standard.StandardRecognizerSkill
 import org.stypox.dicio.sentences.Sentences.Open
+import org.stypox.dicio.util.AppearOnTopNeededOutput
+import org.stypox.dicio.util.BackgroundLaunch
 import org.stypox.dicio.util.StringUtils
 
 class OpenSkill(correspondingSkillInfo: SkillInfo, data: StandardRecognizerData<Open>)
@@ -24,6 +26,9 @@ class OpenSkill(correspondingSkillInfo: SkillInfo, data: StandardRecognizerData<
         val applicationInfo = userAppName?.let { getMostSimilarApp(packageManager, it) }
 
         if (applicationInfo != null) {
+            if (BackgroundLaunch.wouldBeBlocked(ctx.android)) {
+                return AppearOnTopNeededOutput("open apps")
+            }
             val launchIntent: Intent =
                 packageManager.getLaunchIntentForPackage(applicationInfo.packageName)!!
             launchIntent.action = Intent.ACTION_MAIN
