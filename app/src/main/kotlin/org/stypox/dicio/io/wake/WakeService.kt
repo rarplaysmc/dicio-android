@@ -372,6 +372,6 @@ class WakeService : Service() {
         private const val WAKE_WORD_BACKOFF_MILLIS = 3000L
         private const val ACTION_STOP_WAKE_SERVICE =
             "org.stypox.dicio.io.wake.WakeService.ACTION_STOP"
-        private const val RELEASE_STT_RESOURCES_MILLIS = 1000L * 60 * 5 // 5 minutes
+        private const val RELEASE_STT_RESOURCES_MILLIS = 1000L * 60 * 30 // 30 minutes, the bigger model loads slower
     }
 }
