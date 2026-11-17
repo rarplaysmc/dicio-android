@@ -22,10 +22,11 @@ class AiFallbackSkill(correspondingSkillInfo: SkillInfo) :
             LocalLlm.ModelState.MISSING -> AiFallbackOutput.NeedsModel(downloading = false)
             LocalLlm.ModelState.DOWNLOADING -> AiFallbackOutput.NeedsModel(downloading = true)
             LocalLlm.ModelState.READY -> try {
-                val answer = LocalLlm.ask(ctx.android, question)
+                val reply = LocalLlm.ask(ctx.android, question)
                 AiFallbackOutput.Answer(
                     question,
-                    answer.ifEmpty { "Sorry, I don't have an answer for that." },
+                    reply.text.ifEmpty { "Sorry, I don't have an answer for that." },
+                    reply.details,
                 )
             } catch (t: Throwable) {
                 Log.e("AiFallbackSkill", "On-device AI failed", t)

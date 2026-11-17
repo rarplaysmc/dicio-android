@@ -3,6 +3,7 @@ package org.stypox.dicio.skills.fallback.ai
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,12 +20,26 @@ import org.stypox.dicio.io.graphical.Headline
 
 sealed interface AiFallbackOutput : SkillOutput {
 
-    data class Answer(val question: String, val answer: String) : AiFallbackOutput {
+    data class Answer(
+        val question: String,
+        val answer: String,
+        val details: String = "",
+    ) : AiFallbackOutput {
         override fun getSpeechOutput(ctx: SkillContext) = answer
 
         @Composable
         override fun GraphicalOutput(ctx: SkillContext) {
-            Body(text = answer)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Body(text = answer)
+                if (details.isNotEmpty()) {
+                    // small print that helps find out what is slow
+                    Text(
+                        text = details,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
         }
     }
 

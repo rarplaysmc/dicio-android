@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.stypox.dicio.skills.fallback.ai.LocalLlm
 import org.stypox.dicio.di.SttInputDeviceWrapper
 import org.stypox.dicio.di.WakeDeviceWrapper
 import org.stypox.dicio.eval.SkillEvaluator
@@ -93,6 +94,8 @@ class MainActivity : BaseActivity() {
     override fun onStart() {
         isInForeground += 1
         super.onStart()
+        // load the on-device AI model now, so the first question does not have to wait for it
+        LocalLlm.warmUp(this)
     }
 
     override fun onStop() {

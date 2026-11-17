@@ -9,11 +9,15 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 
 /**
  * Runs an open-source language model (Qwen3, Apache 2.0) fully on the phone using LiteRT-LM.
@@ -41,6 +45,7 @@ object LocalLlm {
     enum class ModelState { MISSING, DOWNLOADING, READY }
 
     private val mutex = Mutex()
+    @Volatile
     private var engine: Engine? = null
 
     private fun dir(ctx: Context): File = ctx.getExternalFilesDir(null) ?: ctx.filesDir
@@ -102,9 +107,17 @@ object LocalLlm {
             .apply()
     }
 
+    /** Result of [ask], with details shown in small print to help spot what is slow. */
+    data class Reply(val text: String, val details: String)
+
+    private var backendName = "?"
+    private var loadSeconds = 0.0
+    private val warmUpScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     private fun createEngine(ctx: Context): Engine {
         val path = modelFile(ctx).absolutePath
-        for (backend in listOf(Backend.GPU(), Backend.CPU())) {
+        val start = System.nanoTime()
+        for ((name, backend) in listOf("GPU" to Backend.GPU(), "CPU" to Backend.CPU())) {
             try {
                 val newEngine = Engine(
                     EngineConfig(
@@ -114,27 +127,66 @@ object LocalLlm {
                     )
                 )
                 newEngine.initialize()
-                Log.i(TAG, "Loaded $MODEL_NAME with backend $backend")
+                backendName = name
+                loadSeconds = (System.nanoTime() - start) / 1e9
+                Log.i(TAG, "Loaded $MODEL_NAME on $name in $loadSeconds s")
                 return newEngine
             } catch (t: Throwable) {
-                Log.w(TAG, "Could not load model with backend $backend", t)
+                Log.w(TAG, "Could not load model with backend $name", t)
             }
         }
         throw IllegalStateException("Could not load the AI model on this phone")
     }
 
     /**
-     * Answers [question] with the on-device model. The first call loads the model, which can
-     * take around ten seconds; later calls reuse it.
+     * Starts loading the model in the background, so it is already in memory by the time the
+     * first question arrives. Does nothing if the model is not downloaded or is already loaded.
      */
-    suspend fun ask(ctx: Context, question: String): String = withContext(Dispatchers.IO) {
+    fun warmUp(ctx: Context) {
+        val appContext = ctx.applicationContext
+        if (engine != null) {
+            return
+        }
+        warmUpScope.launch {
+            try {
+                if (modelState(appContext) == ModelState.READY) {
+                    mutex.withLock {
+                        if (engine == null) {
+                            engine = createEngine(appContext)
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Could not warm up the AI model", t)
+            }
+        }
+    }
+
+    /**
+     * Answers [question] with the on-device model. The first call loads the model (unless
+     * [warmUp] already did), which can take around ten seconds; later calls reuse it.
+     */
+    suspend fun ask(ctx: Context, question: String): Reply = withContext(Dispatchers.IO) {
         mutex.withLock {
+            val wasLoaded = engine != null
             val loadedEngine = engine ?: createEngine(ctx.applicationContext).also { engine = it }
             val config = ConversationConfig(systemInstruction = Contents.of(SYSTEM_PROMPT))
             loadedEngine.createConversation(config).use { conversation ->
+                val start = System.nanoTime()
                 // "/no_think" turns off Qwen3's slow step-by-step reasoning mode
-                val reply = conversation.sendMessage("$question /no_think")
-                cleanForSpeech(reply.toString())
+                val raw = conversation.sendMessage("$question /no_think").toString()
+                val answerSeconds = (System.nanoTime() - start) / 1e9
+                val details = buildString {
+                    append("$MODEL_NAME on $backendName, answered in ")
+                    append(String.format(Locale.US, "%.1f s", answerSeconds))
+                    if (!wasLoaded) {
+                        append(String.format(Locale.US, ", loaded in %.1f s", loadSeconds))
+                    }
+                    if (raw.contains("<think>") && raw.length > 400) {
+                        append(", with reasoning")
+                    }
+                }
+                Reply(cleanForSpeech(raw), details)
             }
         }
     }

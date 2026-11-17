@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import org.stypox.dicio.MainActivity
 import org.stypox.dicio.util.BackgroundLaunch
+import org.stypox.dicio.skills.fallback.ai.LocalLlm
 import org.stypox.dicio.MainActivity.Companion.ACTION_WAKE_WORD
 import org.stypox.dicio.R
 import org.stypox.dicio.di.SttInputDeviceWrapper
@@ -224,6 +225,7 @@ class WakeService : Service() {
 
     private fun onWakeWordDetected() {
         Log.d(TAG, "Wake word detected")
+        LocalLlm.warmUp(this)
 
         val intent = Intent(this, MainActivity::class.java)
         intent.setAction(ACTION_WAKE_WORD)
@@ -367,7 +369,7 @@ class WakeService : Service() {
         private const val FOREGROUND_NOTIFICATION_ID = 19803672
         private const val START_NOTIFICATION_ID = 48019274
         private const val TRIGGERED_NOTIFICATION_ID = 601398647
-        private const val WAKE_WORD_BACKOFF_MILLIS = 4000L
+        private const val WAKE_WORD_BACKOFF_MILLIS = 3000L
         private const val ACTION_STOP_WAKE_SERVICE =
             "org.stypox.dicio.io.wake.WakeService.ACTION_STOP"
         private const val RELEASE_STT_RESOURCES_MILLIS = 1000L * 60 * 5 // 5 minutes
