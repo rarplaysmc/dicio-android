@@ -134,3 +134,11 @@ skills:
             type: string
           - id: target
             type: string
+
+  - id: spotify
+    specificity: high
+    sentences:
+      - id: play
+        captures:
+          - id: what
+            type: string
