@@ -121,7 +121,9 @@ private fun sttFabText(state: SttState): String {
         NotAvailable -> stringResource(R.string.stt_not_available)
         NotDownloaded -> stringResource(R.string.stt_download)
         is Downloading -> loadingProgressString(LocalContext.current, state.progress)
-        is ErrorDownloading -> stringResource(R.string.error_downloading)
+        is ErrorDownloading -> stringResource(R.string.error_downloading) +
+            // show the reason too, so that a failed download can be diagnosed
+            (state.throwable.message?.let { ": ${it.take(80)}" } ?: "")
         Downloaded -> stringResource(R.string.stt_unzip)
         is Unzipping -> stringResource(R.string.unzipping)
         is ErrorUnzipping -> stringResource(R.string.error_unzipping)
