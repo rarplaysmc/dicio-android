@@ -44,18 +44,28 @@ android {
         }
     }
 
+    signingConfigs {
+        getByName("debug") {
+            // committed debug key, so every GitHub build can update the installed app
+            storeFile = file("personal-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
+    packaging {
+        jniLibs {
+            pickFirsts.add("**/liblitertlm_jni.so")
+        }
+    }
+
     buildTypes {
         debug {
-            var normalizedGitBranch = gitBranch().replaceFirst("^[^A-Za-z]+", "").replace(Regex("[^0-9A-Za-z]+"), "")
-            applicationIdSuffix = ".$normalizedGitBranch"
-            versionNameSuffix = "-$normalizedGitBranch"
-
-            val isScreenshotTest = (project.findProperty("android.testInstrumentationRunnerArguments.class") as? String)
-                ?.contains("creenshot") == true
-            if (!isScreenshotTest) {
-                // only change the app name if we are not taking screenshots
-                resValue("string", "app_name", "Dicio-${gitBranch()}")
-            }
+            // personal build: fixed id and name, so builds from any branch update the same app
+            applicationIdSuffix = ".personal"
+            versionNameSuffix = "-personal"
+            resValue("string", "app_name", "Dicio AI")
         }
         release {
             isMinifyEnabled = false
@@ -179,6 +189,9 @@ dependencies {
 
     // LiteRT / Tensorflow Lite
     implementation(libs.litert)
+
+    // LiteRT-LM, runs the open-source on-device AI model
+    implementation(libs.litertlm.android)
 
     // OkHttp
     implementation(platform(libs.okhttp.bom))

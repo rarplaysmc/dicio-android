@@ -1,0 +1,4 @@
+play:
+  - play|(listen to)|(put on) .what. on|in|with|from|using spotify
+  - on|in|with|using spotify play|(put on) .what.
+  - play|start|resume (some? music|something|anything)? on|in|with|from? spotify

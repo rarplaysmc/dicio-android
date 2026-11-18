@@ -26,6 +26,8 @@ on:
 jobs:
   build-and-test-jvm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # to publish the APK to the "latest" release
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -55,3 +57,18 @@ jobs:
         with:
           name: app
           path: app/build/outputs/apk/debug/*.apk
+
+      # personal fork: also publish the APK as a plain file that can be downloaded and installed
+      # directly on the phone, without signing in to GitHub or unpacking a zip
+      - name: Publish APK to the "latest" release
+        if: github.repository != 'Stypox/dicio-android'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          cp app/build/outputs/apk/debug/*.apk dicio-ai.apk
+          gh release view latest >/dev/null 2>&1 || gh release create latest \
+            --title "Latest build" \
+            --notes "Newest build of Dicio AI. Download dicio-ai.apk on your phone and tap it to install." \
+            --prerelease --target "$TARGET_SHA"
+          gh release upload latest dicio-ai.apk --clobber

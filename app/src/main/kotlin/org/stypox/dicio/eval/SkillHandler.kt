@@ -18,7 +18,7 @@ import org.stypox.dicio.settings.datastore.UserSettings
 import org.stypox.dicio.settings.datastore.UserSettingsModule
 import org.stypox.dicio.skills.calculator.CalculatorInfo
 import org.stypox.dicio.skills.current_time.CurrentTimeInfo
-import org.stypox.dicio.skills.fallback.text.TextFallbackInfo
+import org.stypox.dicio.skills.fallback.ai.AiFallbackInfo
 import org.stypox.dicio.skills.listening.ListeningInfo
 import org.stypox.dicio.skills.lyrics.LyricsInfo
 import org.stypox.dicio.skills.media.MediaInfo
@@ -26,6 +26,7 @@ import org.stypox.dicio.skills.navigation.NavigationInfo
 import org.stypox.dicio.skills.notify.NotifyInfo
 import org.stypox.dicio.skills.open.OpenInfo
 import org.stypox.dicio.skills.search.SearchInfo
+import org.stypox.dicio.skills.spotify.SpotifyInfo
 import org.stypox.dicio.skills.telephone.TelephoneInfo
 import org.stypox.dicio.skills.timer.TimerInfo
 import org.stypox.dicio.skills.translation.TranslationInfo
@@ -53,6 +54,7 @@ class SkillHandler @Inject constructor(
         TimerInfo,
         CurrentTimeInfo,
         MediaInfo,
+        SpotifyInfo,
         JokeInfo,
         ListeningInfo(dataStore),
         TranslationInfo,
@@ -61,7 +63,7 @@ class SkillHandler @Inject constructor(
     )
 
     private val fallbackSkillInfoList = listOf(
-        TextFallbackInfo,
+        AiFallbackInfo,
     )
 
     private val scope = CoroutineScope(Dispatchers.Default)

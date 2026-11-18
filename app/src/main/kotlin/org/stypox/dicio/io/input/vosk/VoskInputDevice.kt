@@ -356,6 +356,10 @@ class VoskInputDevice(
                 val model = Model(modelDirectory.absolutePath)
                 val recognizer = Recognizer(model, SAMPLE_RATE)
                 recognizer.setMaxAlternatives(ALTERNATIVE_COUNT)
+                // react sooner once the user stops talking: wait at most 5 s for speech to
+                // start, then finish after 0.5 s of silence (and after 20 s in any case)
+                recognizer.setEndpointerMode(1 /* Recognizer.EndpointerMode.SHORT */)
+                recognizer.setEndpointerDelays(5.0f, 0.5f, 20.0f)
                 speechService = SpeechService(recognizer, SAMPLE_RATE)
             } catch (e: IOException) {
                 Log.e(TAG, "Can't load Vosk model", e)
@@ -455,7 +459,9 @@ class VoskInputDevice(
          * All small models from [Vosk](https://alphacephei.com/vosk/models)
          */
         val MODEL_URLS = mapOf(
-            "en" to "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
+            // personal build: the bigger English model (128 MB) is much more accurate than
+            // vosk-model-small-en-us-0.15 (40 MB), which often wrote the wrong words
+            "en" to "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip",
             "en-in" to "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip",
             "cn" to "https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip",
             "ru" to "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip",
